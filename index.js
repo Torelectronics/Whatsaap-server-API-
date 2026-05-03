@@ -23,11 +23,17 @@ function normalizeReply(text, userName, msgText) {
 
 async function generateReplyWithGemini(userName, msgText) {
   if (!msgText) {
-    return `Hola ${userName}, no pude leer tu mensaje.`;
+    return {
+      source: "fallback",
+      text: `Hola ${userName}, no pude leer tu mensaje.`
+    };
   }
 
   if (!GEMINI_API_KEY || GEMINI_API_KEY === "TU_GEMINI_API_KEY_AQUI") {
-    return `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`;
+    return {
+      source: "fallback",
+      text: `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`
+    };
   }
 
   try {
@@ -45,7 +51,11 @@ async function generateReplyWithGemini(userName, msgText) {
           {
             parts: [{ text: prompt }]
           }
-        ]
+        ],
+        generationConfig: {
+          maxOutputTokens: 220,
+          temperature: 0.7
+        }
       },
       {
         timeout: 15000
@@ -53,10 +63,16 @@ async function generateReplyWithGemini(userName, msgText) {
     );
 
     const aiText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    return normalizeReply(aiText, userName, msgText);
+    return {
+      source: aiText ? "gemini" : "fallback",
+      text: normalizeReply(aiText, userName, msgText)
+    };
   } catch (error) {
     console.error("Error Gemini:", error.response?.data || error.message);
-    return `Hola ${userName}, recibí tu mensaje: "${msgText}". No pude consultar la IA en este momento.`;
+    return {
+      source: "fallback",
+      text: `Hola ${userName}, recibí tu mensaje: "${msgText}". No pude consultar la IA en este momento.`
+    };
   }
 }
 
@@ -85,13 +101,14 @@ app.post("/webhook", async (req, res) => {
       console.log(`Mensaje recibido de ${userName} (${from})`);
 
       try {
-        const replyText = await generateReplyWithGemini(userName, msgText);
+        const reply = await generateReplyWithGemini(userName, msgText);
+        const replyText = normalizeReply(reply.text, userName, msgText);
 
         await axios.post(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
           messaging_product: "whatsapp",
           to: from,
           type: "text",
-          text: { body: normalizeReply(replyText, userName, msgText) }
+          text: { body: replyText }
         }, {
           headers: {
             Authorization: `Bearer ${ACCESS_TOKEN}`,
@@ -99,7 +116,7 @@ app.post("/webhook", async (req, res) => {
           },
           timeout: 15000
         });
-        console.log("Respuesta enviada.");
+        console.log(`Respuesta enviada (${reply.source}).`);
       } catch (e) { console.error("Error:", e.response?.data || e.message); }
     }
 
