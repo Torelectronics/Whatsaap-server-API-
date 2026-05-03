@@ -9,7 +9,7 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MAX_REPLY_LENGTH = 1000;
-const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash-lite"];
+const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.0-flash"];
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const MENU_MARACUCHO = [
@@ -252,5 +252,4 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
-
 
