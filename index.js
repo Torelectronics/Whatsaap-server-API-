@@ -32,7 +32,7 @@ function looksLikeEcho(candidate, original) {
 }
 
 function normalizeReply(text, userName, msgText) {
-  const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`;
+  const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo de gemini.`;
   const normalized = (text || fallback).replace(/\s+/g, " ").trim();
 
   if (!normalized) {
