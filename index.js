@@ -4,10 +4,10 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 app.use(express.json());
 
-const VERIFY_TOKEN = "24725684";
-const ACCESS_TOKEN = "EAALodUAV6RgBRQ7RZBdPcuyNSJJ9r9YiKWKdJ4zezgxs1HLH4bJEmOZA57g7t3J0euTS4K5DpIOpb7KKQFCynjNXU6mP5dICRR58eVZAiiChf1GO7k0ZALffsmK8fpXys5XIR5Ya913JTQkuL2aqEw57p3e9Bw7SqhNEH5bNBYg0ntB0paQawrD74k28Orno7IVRBNcBZB1oQSXTLAV7mvXbqtn28JGXKrDpQqQupgZAgT1PtnN5qUh4TuVCpklhct0SHLcq4AdC0JKBU8ZBEVZB";
-const PHONE_NUMBER_ID = "1066218519907665";
-const GEMINI_API_KEY = "AIzaSyCioNfz73XIFst0x5RM1qHAnnBMsKGtLJ8";
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MAX_REPLY_LENGTH = 1000;
 const GEMINI_MODELS = ["gemini-flash-latest", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
