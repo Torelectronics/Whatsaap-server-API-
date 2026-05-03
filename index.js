@@ -9,7 +9,7 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MAX_REPLY_LENGTH = 1000;
-const GEMINI_MODELS = ["gemini-flash-latest", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
+const GEMINI_MODELS = ["gemini-1.5-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const MENU_MARACUCHO = [
