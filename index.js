@@ -106,7 +106,7 @@ async function generateReplyWithGemini(userName, msgText) {
   }
 }
 
-app.get("/", (req, res) => res.send("Servidor de Anyelver: STATUS OK"));
+app.get("/", (req, res) => res.send("Servidor de Anyelver: STATUS OK con ia"));
 
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
