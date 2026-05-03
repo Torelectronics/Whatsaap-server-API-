@@ -9,6 +9,7 @@ const ACCESS_TOKEN = "EAALodUAV6RgBRQ7RZBdPcuyNSJJ9r9YiKWKdJ4zezgxs1HLH4bJEmOZA5
 const PHONE_NUMBER_ID = "1066218519907665";
 const GEMINI_API_KEY = "AIzaSyCioNfz73XIFst0x5RM1qHAnnBMsKGtLJ8";
 const MAX_REPLY_LENGTH = 1000;
+const GEMINI_MODELS = ["gemini-flash-latest", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const MENU_MARACUCHO = [
@@ -116,6 +117,11 @@ function normalizeReply(text, userName, msgText) {
   return normalized.slice(0, MAX_REPLY_LENGTH);
 }
 
+function isModelNotFoundError(error) {
+  const message = `${error?.message || ""}`.toLowerCase();
+  return message.includes("404") || message.includes("no se encuentra") || message.includes("not found");
+}
+
 async function generateReplyWithGemini(userName, msgText) {
   if (!msgText) {
     return {
@@ -149,13 +155,32 @@ async function generateReplyWithGemini(userName, msgText) {
       "Responde en espanol, corto, claro y vendedor."
     ].join("\n");
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: systemInstructionText
-    });
+    let aiText = "";
+    let selectedModel = "";
 
-    const result = await model.generateContent(prompt);
-    const aiText = result.response.text()?.trim();
+    for (const modelName of GEMINI_MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemInstructionText
+        });
+
+        const result = await model.generateContent(prompt);
+        aiText = result.response.text()?.trim() || "";
+        selectedModel = modelName;
+        break;
+      } catch (modelError) {
+        if (!isModelNotFoundError(modelError)) {
+          throw modelError;
+        }
+      }
+    }
+
+    if (!selectedModel) {
+      throw new Error(`No hay modelos Gemini disponibles: ${GEMINI_MODELS.join(", ")}`);
+    }
+
+    console.log(`Gemini modelo activo: ${selectedModel}`);
 
     if (looksLikeEcho(aiText, msgText)) {
       return {
