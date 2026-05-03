@@ -10,6 +10,27 @@ const GEMINI_API_KEY = "AIzaSyCioNfz73XIFst0x5RM1qHAnnBMsKGtLJ8";
 const GEMINI_MODEL = "gemini-1.5-flash";
 const MAX_REPLY_LENGTH = 1000;
 
+function sanitizeForComparison(text) {
+  return (text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function looksLikeEcho(candidate, original) {
+  const cleanCandidate = sanitizeForComparison(candidate);
+  const cleanOriginal = sanitizeForComparison(original);
+
+  if (!cleanCandidate || !cleanOriginal) {
+    return false;
+  }
+
+  return cleanCandidate === cleanOriginal;
+}
+
 function normalizeReply(text, userName, msgText) {
   const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`;
   const normalized = (text || fallback).replace(/\s+/g, " ").trim();
@@ -40,6 +61,7 @@ async function generateReplyWithGemini(userName, msgText) {
     const prompt = [
       "Responde en espanol de forma breve, clara y amable.",
       "Eres un asistente conectado a WhatsApp.",
+      "No repitas literalmente el mensaje del usuario.",
       `Nombre del usuario: ${userName}`,
       `Mensaje del usuario: ${msgText}`
     ].join("\n");
@@ -63,6 +85,14 @@ async function generateReplyWithGemini(userName, msgText) {
     );
 
     const aiText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (looksLikeEcho(aiText, msgText)) {
+      return {
+        source: "fallback",
+        text: `Hola ${userName}, soy tu asistente con Gemini. Si quieres, te respondo con mas detalle sobre: "${msgText}".`
+      };
+    }
+
     return {
       source: aiText ? "gemini" : "fallback",
       text: normalizeReply(aiText, userName, msgText)
@@ -126,4 +156,5 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+
 
