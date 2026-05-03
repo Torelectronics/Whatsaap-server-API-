@@ -10,6 +10,79 @@ const GEMINI_API_KEY = "AIzaSyCioNfz73XIFst0x5RM1qHAnnBMsKGtLJ8";
 const GEMINI_MODEL = "gemini-flash-latest";
 const MAX_REPLY_LENGTH = 1000;
 
+const MENU_MARACUCHO = [
+  {
+    id: "patacon-pisao",
+    nombre: "Patacon Pisao (El Clasico)",
+    precio: 9.5,
+    descripcion: "Dos tapas de platano frito con pernil, queso de mano, jamon, lechuga y lluvia de salsas.",
+    disponibilidad: true
+  },
+  {
+    id: "arepa-cabimera",
+    nombre: "Arepa Cabimera",
+    precio: 8.5,
+    descripcion: "Arepa frita cortada en cuadros con base de carne mechada, huevo cocido, jamon, queso rallado y mucha salsa.",
+    disponibilidad: true
+  },
+  {
+    id: "tumbarrancho",
+    nombre: "Tumbarrancho",
+    precio: 7.5,
+    descripcion: "Arepa rebozada y frita, rellena con mortadela, queso, carne y ensalada fresca.",
+    disponibilidad: true
+  },
+  {
+    id: "aguita-de-sapo",
+    nombre: "Aguita de Sapo",
+    precio: 8,
+    descripcion: "Arepas pequenas fritas rellenas con pernil y banadas en el jugo de la coccion del pernil con queso frito.",
+    disponibilidad: true
+  },
+  {
+    id: "tequenos-gigantes",
+    nombre: "Tequenos Gigantes",
+    precio: 6.5,
+    descripcion: "Dedos de queso version estadio, bien cargados y crujientes.",
+    disponibilidad: true
+  },
+  {
+    id: "yoyo-maracucho",
+    nombre: "Yoyo Maracucho",
+    precio: 6,
+    descripcion: "Tajada de platano maduro frito rellena de queso y jamon, rebozada en harina.",
+    disponibilidad: true
+  },
+  {
+    id: "mandoca-con-queso",
+    nombre: "Mandoca con Queso",
+    precio: 5.5,
+    descripcion: "Rosquitas de platano maduro y maiz con toque de canela, servidas con queso duro.",
+    disponibilidad: true
+  },
+  {
+    id: "hamburguesa-huevo-queso-de-mano",
+    nombre: "Hamburguesa con Huevo y Queso de Mano",
+    precio: 10,
+    descripcion: "Carne artesanal con huevo y queso de mano derretido encima, en pan suave con salsas.",
+    disponibilidad: true
+  },
+  {
+    id: "perro-caliente-papitas-queso",
+    nombre: "Perro Caliente con Papitas y Queso",
+    precio: 7,
+    descripcion: "Pan de perro con salchicha, ripio de papa al extremo y queso parmesano.",
+    disponibilidad: true
+  },
+  {
+    id: "batido-zapote",
+    nombre: "Batido de Zapote",
+    precio: 4.5,
+    descripcion: "Batido refrescante de zapote ideal para acompanar los platos maracuchos.",
+    disponibilidad: true
+  }
+];
+
 function sanitizeForComparison(text) {
   return (text || "")
     .toLowerCase()
@@ -32,7 +105,7 @@ function looksLikeEcho(candidate, original) {
 }
 
 function normalizeReply(text, userName, msgText) {
-  const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo de gemini.`;
+  const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`;
   const normalized = (text || fallback).replace(/\s+/g, " ").trim();
 
   if (!normalized) {
@@ -53,24 +126,37 @@ async function generateReplyWithGemini(userName, msgText) {
   if (!GEMINI_API_KEY || GEMINI_API_KEY === "TU_GEMINI_API_KEY_AQUI") {
     return {
       source: "fallback",
-      text: `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`
+      text: `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo letra.`
     };
   }
 
   try {
+    const menuJson = JSON.stringify(MENU_MARACUCHO, null, 2);
+
+    const systemInstructionText = [
+      "Actua como el encargado de ventas de La Esquina Maracucha. Tu personalidad es carismatica y servicial.",
+      `Usa este JSON como unica fuente de verdad para precios y productos: ${menuJson}`,
+      "Si el cliente pregunta por un ingrediente, buscalo en la descripcion del producto.",
+      "Lojica de formato obligatoria: usa negritas para los precios y lista de puntos para los ingredientes.",
+      "Si el usuario pregunta algo fuera del menu, responde: '¡Esa te la debo, primo! Pero te puedo ofrecer un [PRODUCTO PARECIDO] que esta mundial'.",
+      "No repitas literalmente el mensaje del usuario."
+    ].join("\n");
+
     const prompt = [
-      "Responde en espanol de forma breve, clara y amable.",
-      "Eres un asistente conectado a WhatsApp.",
-      "No repitas literalmente el mensaje del usuario.",
-      `Nombre del usuario: ${userName}`,
-      `Mensaje del usuario: ${msgText}`
+      `Nombre del cliente: ${userName}`,
+      `Consulta del cliente: ${msgText}`,
+      "Responde en espanol, corto, claro y vendedor."
     ].join("\n");
 
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
+        systemInstruction: {
+          parts: [{ text: systemInstructionText }]
+        },
         contents: [
           {
+            role: "user",
             parts: [{ text: prompt }]
           }
         ],
@@ -106,7 +192,7 @@ async function generateReplyWithGemini(userName, msgText) {
   }
 }
 
-app.get("/", (req, res) => res.send("Servidor de Anyelver: STATUS OK con ia"));
+app.get("/", (req, res) => res.send("Servidor de Anyelver: STATUS OK"));
 
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
