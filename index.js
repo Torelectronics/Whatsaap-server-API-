@@ -106,6 +106,16 @@ function looksLikeEcho(candidate, original) {
   return cleanCandidate === cleanOriginal;
 }
 
+function formatForWhatsApp(text) {
+  if (!text) return text;
+  return text
+    .replace(/^[\*\-]\s+/gm, "\u2022 ")        // - item o * item → • item
+    .replace(/\*\*(.*?)\*\*/g, "*$1*")          // **bold** → *bold*
+    .replace(/#{1,6}\s+(.*)/gm, "*$1*")         // ## Titulo → *Titulo*
+    .replace(/\n{3,}/g, "\n\n")                 // máximo dos saltos de línea seguidos
+    .trim();
+}
+
 function normalizeReply(text, userName, msgText) {
   const fallback = `Hola ${userName}, recibí tu mensaje: "${msgText}". Servidor operativo.`;
   const normalized = (text || fallback).replace(/\s+/g, " ").trim();
@@ -144,9 +154,14 @@ async function generateReplyWithGemini(userName, msgText) {
       "Actua como el encargado de ventas de La Esquina Maracucha. Tu personalidad es carismatica y servicial.",
       `Usa este JSON como unica fuente de verdad para precios y productos: ${menuJson}`,
       "Si el cliente pregunta por un ingrediente, buscalo en la descripcion del producto.",
-      "Lojica de formato obligatoria: usa negritas para los precios y lista de puntos para los ingredientes.",
+      "FORMATO OBLIGATORIO PARA WHATSAPP (sigue esto al pie de la letra):",
+      "- Usa *texto* (un solo asterisco) para resaltar nombres de productos y precios. Ejemplo: *Patacon Pisao* — *$9.50*",
+      "- Usa el simbolo • para cada ingrediente o punto de la lista.",
+      "- Separa secciones con una linea en blanco.",
+      "- NO uses ** (doble asterisco), NO uses # ni ##, NO uses guion - para listas.",
+      "- Estructura sugerida cuando presentes un producto:\n  *Nombre del producto* — *$precio*\n  \n  Descripcion breve en una linea.\n  \n  Incluye:\n  • Ingrediente 1\n  • Ingrediente 2\n  \n  Frase vendedora corta al final.",
       "Si el usuario pregunta algo fuera del menu, responde: '¡Esa te la debo, primo! Pero te puedo ofrecer un [PRODUCTO PARECIDO] que esta mundial'.",
-      "No repitas literalmente el mensaje del usuario."
+      "Respuestas cortas, claras y ordenadas. No repitas literalmente el mensaje del usuario."
     ].join("\n");
 
     const prompt = [
@@ -191,7 +206,7 @@ async function generateReplyWithGemini(userName, msgText) {
 
     return {
       source: aiText ? "gemini" : "fallback",
-      text: normalizeReply(aiText, userName, msgText)
+      text: normalizeReply(formatForWhatsApp(aiText), userName, msgText)
     };
   } catch (error) {
     console.error("Error Gemini:", error.response?.data || error.message);
